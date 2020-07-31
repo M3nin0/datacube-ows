@@ -145,11 +145,13 @@ def lower_get_args():
         kl = k.lower()
         for v in request.args.getlist(k):
             d[kl] = unquote(v)
+    # :BDC: update http-args parser
     if 'crs' in d:
-        if 'EPSG' not in d['crs']:
+        if 'EPSG' not in d['crs']: # unquote the bdc custom CRS
             d['crs'] = ' '.join(['+' + x for x in d['crs'].strip().split('  ')])
             d['response_crs'] = ' '.join(['+' + x for x in d['response_crs'].strip().split('  ')])
     return d
+
 
 @app.route('/')
 def ogc_impl():
