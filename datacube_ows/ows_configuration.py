@@ -855,7 +855,9 @@ class OWSConfig(OWSConfigEntry):
                 "horizontal_coord": crsdef.get("horizontal_coord", "longitude"),
                 "vertical_coord": crsdef.get("vertical_coord", "latitude"),
                 "vertical_coord_first": crsdef.get("vertical_coord_first", False),
-                "gml_name": gml_name
+                "gml_name": gml_name,
+                "customCRS": crsdef.get("customCRS", False),
+                "customDefinition": crsdef.get("customDefinition", "")
             }
             if self.published_CRSs[crs_str]["geographic"]:
                 if self.published_CRSs[crs_str]["horizontal_coord"] != "longitude":

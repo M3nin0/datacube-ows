@@ -135,6 +135,8 @@ OWS_SUPPORTED = {
 
 
 def lower_get_args():
+    from urllib.parse import unquote
+
     # Get parameters in WMS are case-insensitive, and intended to be single use.
     # Spec does not specify which instance should be used if a parameter is provided more than once.
     # This function uses the LAST instance.
@@ -142,7 +144,11 @@ def lower_get_args():
     for k in request.args.keys():
         kl = k.lower()
         for v in request.args.getlist(k):
-            d[kl] = v
+            d[kl] = unquote(v)
+    if 'crs' in d:
+        if 'EPSG' not in d['crs']:
+            d['crs'] = ' '.join(['+' + x for x in d['crs'].strip().split('  ')])
+            d['response_crs'] = ' '.join(['+' + x for x in d['response_crs'].strip().split('  ')])
     return d
 
 @app.route('/')

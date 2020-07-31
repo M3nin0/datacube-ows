@@ -57,7 +57,17 @@ class WCS1GetCoverageRequest():
             raise WCS1Exception("%s is not a supported CRS" % self.request_crsid,
                                 WCS1Exception.INVALID_PARAMETER_VALUE,
                                 locator="CRS parameter")
-        self.request_crs = geometry.CRS(self.request_crsid)
+
+        # :TODO: Move this for a better place
+        # :BDC: function to verify if is a custom CRS in a request/response
+        def get_proj_obj(crsid, cfg):
+            _crs_obj = cfg.published_CRSs[crsid]
+            if _crs_obj['customCRS']:
+                return geometry.CRS(_crs_obj['customDefinition'])
+            return geometry.CRS(crsid)
+
+        # :BDC: verify if is a custom CRS
+        self.request_crs = get_proj_obj(self.request_crsid, cfg)
 
         # Argument: response_crs (optional)
         if "response_crs" in args:

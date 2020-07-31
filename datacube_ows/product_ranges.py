@@ -39,7 +39,18 @@ def get_crsids(cfg=None):
 
 
 def get_crses(cfg=None):
-    return  {crsid: datacube.utils.geometry.CRS(crsid) for crsid in get_crsids(cfg)}
+    if not cfg:
+        cfg = get_config()
+
+    result = {}
+    for crsid in get_crsids(cfg):
+        _data = cfg.published_CRSs[crsid]
+        if _data['customCRS']:
+            result[crsid] = datacube.utils.geometry.CRS(_data['customDefinition'])
+        else:
+            result[crsid] = datacube.utils.geometry.CRS(crsid)
+
+    return result  # {crsid: datacube.utils.geometry.CRS(crsid) for crsid in get_crsids(cfg)}
 
 
 def jsonise_bbox(bbox):
