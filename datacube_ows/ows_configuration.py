@@ -480,9 +480,21 @@ class OWSNamedLayer(OWSLayer):
         if not self.native_CRS:
             raise ConfigException(f"No native CRS could be found for layer {self.name}")
         if self.native_CRS not in self.global_cfg.published_CRSs:
-            raise ConfigException("Native CRS for product %s (%s) not in published CRSs" % (
-                            self.product_name,
-                            self.native_CRS))
+            # BDC: Search for a BDC Custom CRS before raise exception
+            # TODO: Move for a better place
+            def search_custom_crs(native_CRS: str, global_cfg):
+                for crs in global_cfg.published_CRSs:
+                    if global_cfg.published_CRSs[crs]['customCRS']:
+                        if global_cfg.published_CRSs[crs]['customDefinition'] == native_CRS:
+                            return crs
+                return
+            _native_CRS = search_custom_crs(self.native_CRS, self.global_cfg)
+            if not _native_CRS:
+                raise ConfigException("Native CRS for product %s (%s) not in published CRSs" % (
+                                self.product_name,
+                                self.native_CRS))
+            self.native_CRS = _native_CRS # Change to EPSG Code
+
         self.native_CRS_def = self.global_cfg.published_CRSs[self.native_CRS]
         # Prepare Rectified Grids
         try:

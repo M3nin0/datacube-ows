@@ -76,7 +76,7 @@ class WCS1GetCoverageRequest():
                 raise WCS1Exception("%s is not a supported CRS" % self.request_crsid,
                                     WCS1Exception.INVALID_PARAMETER_VALUE,
                                     locator="RESPONSE_CRS parameter")
-            self.response_crs = geometry.CRS(self.response_crsid)
+            self.response_crs = get_proj_obj(self.response_crsid, cfg) # geometry.CRS(self.response_crsid)
         else:
             self.response_crsid = self.request_crsid
             self.response_crs = self.request_crs
@@ -373,6 +373,14 @@ def get_tiff(req, data):
     xname = cfg.published_CRSs[req.request_crsid]["horizontal_coord"]
     yname = cfg.published_CRSs[req.request_crsid]["vertical_coord"]
     nodata = 0
+
+    # BDC: Function to handle custom CRS without EPSG code
+    def crscustom_to_wkt(crsid, cfg):
+        for crs in cfg.published_CRSs:
+            if crsid == crs and cfg.published_CRSs[crs]['customCRS']:
+                return cfg.published_CRSs[crs]['customDefinition']
+        return crsid
+
     for band in data.data_vars:
         nodata = req.product.band_idx.nodata_val(band)
     with MemoryFile() as memfile:
@@ -383,7 +391,7 @@ def get_tiff(req, data):
             height=data.dims[yname],
             count=len(data.data_vars),
             transform=req.affine,
-            crs=req.response_crsid,
+            crs=crscustom_to_wkt(req.response_crsid, cfg),
             nodata=nodata,
             tiled=True,
             compress="lzw",
