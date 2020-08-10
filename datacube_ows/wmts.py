@@ -17,7 +17,8 @@ from datacube_ows.utils import log_call
 
 @log_call
 def handle_wmts(nocase_args):
-    operation = nocase_args.get("request", "").upper()
+    # operation = nocase_args.get("request", "").upper()
+    operation = nocase_args.get("request", "").upper()  # Ignore case in http's query string
     # WMS operation Map
     if not operation:
         raise WMTSException("No operation specified", locator="Request parameter")
