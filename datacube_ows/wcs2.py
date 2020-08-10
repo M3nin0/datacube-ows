@@ -32,7 +32,9 @@ WCS_REQUESTS = ("DESCRIBECOVERAGE", "GETCOVERAGE")
 
 @log_call
 def handle_wcs2(nocase_args):
-    operation = request.args.get("request", "").upper()
+    # operation = request.args.get("request", "").upper()
+    operation = nocase_args.get("request", "").upper() # Ignore case in http's query string
+
     if not operation:
         raise WCS2Exception("No operation specified", locator="Request parameter")
     elif operation == "GETCAPABILITIES":
