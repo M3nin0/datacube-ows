@@ -195,6 +195,12 @@ class WCSScaler:
                 self.quantise_to_resolution(grid)
             self.crs = new_crs
         else:
+            # Treatment of equal CRSs
+            self.min.x = self.layer.ranges["bboxes"][self.crs]["left"]
+            self.min.y = self.layer.ranges["bboxes"][self.crs]["bottom"]
+            self.max.x = self.layer.ranges["bboxes"][self.crs]["right"]
+            self.max.y = self.layer.ranges["bboxes"][self.crs]["top"]
+
             self.quantise_to_resolution(grid)
 
     def quantise_to_resolution(self, grid):
