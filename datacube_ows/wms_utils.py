@@ -279,7 +279,14 @@ class GetParameters():
         self.crsid = get_arg(args, crs_arg, "Coordinate Reference System",
                              errcode=WMSException.INVALID_CRS,
                              permitted_values=self.cfg.published_CRSs.keys())
-        self.crs = geometry.CRS(self.crsid)
+
+        # :BDC: Handle custom CRS
+        _crs = self.cfg.published_CRSs[self.crsid]
+        if _crs['customCRS']:
+            self.crs = geometry.CRS(_crs['customDefinition'])
+        else:
+            self.crs = geometry.CRS(self.crsid)
+
         # Layers
         self.product = self.get_product(args)
 
