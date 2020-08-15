@@ -66,7 +66,11 @@ def _get_geobox_xy(args, crs):
     return minx, miny, maxx, maxy
 
 
-def _get_geobox(args, src_crs, dst_crs=None):
+def _get_geobox(args, src_crs, dst_crs=None, isCustomCRS=True):
+    # :BDC: workaround to set crs without add EPSG code in PROJlib
+    if isCustomCRS:
+        src_crs = args['crs']
+
     width = int(args['width'])
     height = int(args['height'])
     minx, miny, maxx, maxy = _get_geobox_xy(args, src_crs)
@@ -81,13 +85,22 @@ def _get_geobox(args, src_crs, dst_crs=None):
             src_crs, dst_crs=dst_crs
         )
 
+    # :BDC: TODO: Move to a better place
+    if isCustomCRS:
+        src_crs = get_config().published_CRSs[src_crs]['customDefinition']
+
     out_crs = src_crs if dst_crs is None else dst_crs
     affine = Affine.translation(minx, maxy) * Affine.scale((maxx - minx) / width, (miny - maxy) / height)
     return geometry.GeoBox(width, height, affine, out_crs)
 
 
-def _get_polygon(args, crs):
+def _get_polygon(args, crs, isCustomCRS = False):
     minx, miny, maxx, maxy = _get_geobox_xy(args, crs)
+
+    # :BDC: workaround to set crs without add EPSG code in PROJlib
+    if isCustomCRS:
+        crs = get_config().published_CRSs[crs]['customDefinition']
+
     poly = geometry.polygon([(minx, maxy), (minx, miny), (maxx, miny), (maxx, maxy), (minx, maxy)], crs)
     return poly
 
@@ -97,12 +110,22 @@ def int_trim(val, minval, maxval):
 
 
 def zoom_factor(args, crs):
+
+    # :BDC: Check if is a custom CRS
+    _cfg = get_config()
+    if _cfg.published_CRSs[args['crs']]['customCRS']:
+        crs = _cfg.published_CRSs[args['crs']]['customDefinition']
+
     # Determine the geographic "zoom factor" for the request.
     # (Larger zoom factor means deeper zoom.  Smaller zoom factor means larger area.)
     # Extract request bbox and crs
     width = int(args['width'])
     height = int(args['height'])
-    minx, miny, maxx, maxy = _get_geobox_xy(args, crs)
+
+    if _cfg.published_CRSs[args['crs']]['customCRS']:
+        minx, miny, maxx, maxy = _get_geobox_xy(args, args['crs'])
+    else:
+        minx, miny, maxx, maxy = _get_geobox_xy(args, crs)
 
     # Project to a geographic coordinate system
     # This is why we can't just use the regular geobox.  The scale needs to be
@@ -290,12 +313,19 @@ class GetParameters():
         # Layers
         self.product = self.get_product(args)
 
-        self.geometry = _get_polygon(args, self.crs)
+        if _crs["customCRS"]:
+            self.geometry = _get_polygon(args, self.crsid, isCustomCRS=True)
+        else:
+            self.geometry = _get_polygon(args, self.crs)
+
         # BBox, height and width parameters
-        self.geobox = _get_geobox(args, self.crs)
+        if _crs["customCRS"]:
+            self.geobox = _get_geobox(args, self.crs, isCustomCRS=True)
+        else:
+            self.geobox = _get_geobox(args, self.crs)
+
         # Time parameter
         self.times = get_times(args, self.product)
-
         self.method_specific_init(args)
 
     def method_specific_init(self, args):
